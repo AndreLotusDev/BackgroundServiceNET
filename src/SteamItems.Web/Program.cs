@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.OpenApi;
+using SteamItems.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -35,8 +38,50 @@ builder.Services.AddAuthentication(options =>
         options.MapInboundClaims = false;
         options.TokenValidationParameters.NameClaimType = "name";
         options.TokenValidationParameters.RoleClaimType = "role";
+    })
+    // Bearer tokens for /api (Swagger UI and other API clients).
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.Authority = identity["Authority"];
+        options.MapInboundClaims = false;
+        // IdentityServer only defines the "api" scope (no ApiResource), so tokens carry no audience;
+        // the ApiScope policy checks the scope claim instead.
+        options.TokenValidationParameters.ValidateAudience = false;
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+    options.AddPolicy(AuthPolicies.ApiScope, policy => policy
+        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .RequireClaim("scope", "api")));
+
+// Swagger UI signs in against SteamItems.Identity with the public "swagger" client (code + PKCE).
+var authority = identity["Authority"]?.TrimEnd('/');
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "SteamItems API", Version = "v1" });
+
+    // Only /api controllers belong in the document, not the MVC pages.
+    options.DocInclusionPredicate((_, api) => api.RelativePath?.StartsWith("api/") == true);
+
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.OAuth2,
+        Flows = new OpenApiOAuthFlows
+        {
+            AuthorizationCode = new OpenApiOAuthFlow
+            {
+                AuthorizationUrl = new Uri($"{authority}/connect/authorize"),
+                TokenUrl = new Uri($"{authority}/connect/token"),
+                Scopes = new Dictionary<string, string> { ["api"] = "SteamItems API" },
+            },
+        },
+    });
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("oauth2", document)] = ["api"],
+    });
+});
 
 var app = builder.Build();
 
@@ -49,6 +94,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.OAuthClientId(identity["SwaggerClientId"]);
+    options.OAuthScopes("api");
+    options.OAuthUsePkce();
+});
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -60,7 +114,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
-
+app.MapControllers();
 
 app.MapDefaultEndpoints();
 

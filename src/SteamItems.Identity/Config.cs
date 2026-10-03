@@ -26,6 +26,8 @@ public static class Config
             ?? throw new InvalidOperationException("Clients:Mvc:BaseUrl is not configured.");
         var mvcSecret = mvc["Secret"]
             ?? throw new InvalidOperationException("Clients:Mvc:Secret is not configured.");
+        var swaggerBaseUrl = configuration["Clients:Swagger:BaseUrl"]?.TrimEnd('/')
+            ?? throw new InvalidOperationException("Clients:Swagger:BaseUrl is not configured.");
 
         return
         [
@@ -51,6 +53,23 @@ public static class Config
                     IdentityServerConstants.StandardScopes.Email,
                     ApiScope,
                 },
+            },
+
+            // Swagger UI in SteamItems.Web: public browser client, code + PKCE, no secret.
+            new Client
+            {
+                ClientId = "swagger",
+                ClientName = "SteamItems API (Swagger UI)",
+                RequireClientSecret = false,
+
+                AllowedGrantTypes = GrantTypes.Code,
+                RequirePkce = true,
+
+                RedirectUris = { $"{swaggerBaseUrl}/swagger/oauth2-redirect.html" },
+                // The UI calls the token endpoint from the browser.
+                AllowedCorsOrigins = { swaggerBaseUrl },
+
+                AllowedScopes = { ApiScope },
             },
         ];
     }
