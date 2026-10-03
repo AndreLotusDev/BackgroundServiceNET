@@ -50,3 +50,5 @@ Starts and stops hosted services.
 
 And is that why we are encouraged to use webapplication builder since net 6 that under the hood it has generic host running.
 And in .NET 7 we had the introduction of hostapplicationbuilder where is far more flexible than webapplicationbuilder.
+
+We need to keep in mind that if we inject the service in Progtram.cs, the hosted service in first line will start first, but in shutdown will be the last to stop.

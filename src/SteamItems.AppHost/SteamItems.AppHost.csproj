@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
+
+  <ItemGroup>
+    <ProjectReference Include="..\SteamItems.Web\SteamItems.Web.csproj" />
+    <ProjectReference Include="..\SteamItems.Worker\SteamItems.Worker.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>d7968a57-929d-4149-9e87-56624dedf644</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
