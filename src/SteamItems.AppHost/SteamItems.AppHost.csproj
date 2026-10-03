@@ -1,6 +1,7 @@
 <Project Sdk="Aspire.AppHost.Sdk/13.6.0">
 
   <ItemGroup>
+    <ProjectReference Include="..\SteamItems.Identity\SteamItems.Identity.csproj" />
     <ProjectReference Include="..\SteamItems.Web\SteamItems.Web.csproj" />
     <ProjectReference Include="..\SteamItems.Worker\SteamItems.Worker.csproj" />
   </ItemGroup>

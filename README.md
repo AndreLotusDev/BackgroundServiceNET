@@ -15,11 +15,12 @@ src/
   SteamItems.AppHost/          .NET Aspire orchestration (starts everything)
   SteamItems.ServiceDefaults/  Aspire defaults: OpenTelemetry, health checks, resilience
   SteamItems.Contracts/        Shared contract between Web and Worker (Excel layout, event DTO)
-  SteamItems.Web/              ASP.NET Core MVC
+  SteamItems.Identity/         Duende IdentityServer + ASP.NET Identity (login, register, tokens)
+  SteamItems.Web/              ASP.NET Core MVC (OIDC client of SteamItems.Identity)
   SteamItems.Worker/           Worker Service
 ```
 
-Web and Worker do not reference each other. They only share `Contracts` and `ServiceDefaults`.
+Web and Worker do not reference each other. They only share `Contracts` and `ServiceDefaults`. Web talks to Identity over OIDC only.
 
 ## Prerequisites
 
@@ -57,14 +58,20 @@ The first message on the queue is an `s3:TestEvent`, which S3 sends when the not
 dotnet run --project src/SteamItems.AppHost
 ```
 
-This starts Web and Worker and opens the Aspire dashboard (its URL, including a login token, is printed in the console). Use the dashboard to see the Web URL and the logs of both services. Press `Ctrl+C` to stop everything.
+This starts Identity, Web and Worker and opens the Aspire dashboard (its URL, including a login token, is printed in the console). Use the dashboard to see the Web URL and the logs of both services. Press `Ctrl+C` to stop everything.
 
 ## Run a single service
 
-Web (default MVC home page at http://localhost:5017):
+Identity (https://localhost:5001, discovery at `/.well-known/openid-configuration`). In Development it applies migrations to `identity.db` and seeds the test users on startup:
 
 ```bash
-dotnet run --project src/SteamItems.Web --launch-profile http
+dotnet run --project src/SteamItems.Identity --launch-profile https
+```
+
+Web (https://localhost:7281). Needs Identity running; login only works over HTTPS:
+
+```bash
+dotnet run --project src/SteamItems.Web --launch-profile https
 ```
 
 Worker (logs a heartbeat every 5 seconds and stops cleanly on `Ctrl+C`):
@@ -72,6 +79,12 @@ Worker (logs a heartbeat every 5 seconds and stops cleanly on `Ctrl+C`):
 ```bash
 dotnet run --project src/SteamItems.Worker
 ```
+
+## Login
+
+Click **Log in** (or open **Profile**, which requires login). Test users come from `SeedUsers` in [src/SteamItems.Identity/appsettings.Development.json](src/SteamItems.Identity/appsettings.Development.json): `alice` / `bob`, password `Pass123$`. New users can sign up from the **Register** link on the login page.
+
+IdentityServer runs without a Duende license key (allowed for development/testing), so it logs license warnings at startup.
 
 ## Build
 

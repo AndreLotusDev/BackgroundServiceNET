@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamItems.Web", "src\Steam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamItems.Worker", "src\SteamItems.Worker\SteamItems.Worker.csproj", "{21FD5F2B-D7EA-4BB5-BC39-9219E3DEBFE7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SteamItems.Identity", "src\SteamItems.Identity\SteamItems.Identity.csproj", "{802B7F6A-60F8-4003-B464-2A005B722DE3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,18 @@ Global
 		{21FD5F2B-D7EA-4BB5-BC39-9219E3DEBFE7}.Release|x64.Build.0 = Release|Any CPU
 		{21FD5F2B-D7EA-4BB5-BC39-9219E3DEBFE7}.Release|x86.ActiveCfg = Release|Any CPU
 		{21FD5F2B-D7EA-4BB5-BC39-9219E3DEBFE7}.Release|x86.Build.0 = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|x64.Build.0 = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Debug|x86.Build.0 = Debug|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|x64.ActiveCfg = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|x64.Build.0 = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|x86.ActiveCfg = Release|Any CPU
+		{802B7F6A-60F8-4003-B464-2A005B722DE3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,5 +109,6 @@ Global
 		{4FA0E2D1-23E0-45BE-9895-270F331A690F} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{86713576-A98B-40B9-9A53-F69F56F07003} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{21FD5F2B-D7EA-4BB5-BC39-9219E3DEBFE7} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{802B7F6A-60F8-4003-B464-2A005B722DE3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

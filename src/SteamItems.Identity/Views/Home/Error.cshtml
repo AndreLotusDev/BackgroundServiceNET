@@ -1,0 +1,20 @@
+@model Duende.IdentityServer.Models.ErrorMessage?
+@{
+    ViewData["Title"] = "Error";
+}
+
+<h1 class="h3 text-danger">Error</h1>
+<p>Sorry, there was an error.</p>
+
+@if (Model is not null)
+{
+    <p><strong>@Model.Error</strong></p>
+    @if (Model.ErrorDescription is not null)
+    {
+        <p>@Model.ErrorDescription</p>
+    }
+    @if (Model.RequestId is not null)
+    {
+        <p class="text-muted small">Request id: @Model.RequestId</p>
+    }
+}

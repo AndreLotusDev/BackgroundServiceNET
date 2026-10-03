@@ -1,0 +1,29 @@
+@using Microsoft.AspNetCore.Authentication
+@{
+    ViewData["Title"] = "Profile";
+    var auth = await Context.AuthenticateAsync();
+}
+
+<h1>Hello, @User.Identity?.Name</h1>
+<p>This page requires login. Claims and session data issued by SteamItems.Identity:</p>
+
+<h2 class="h5 mt-4">Claims</h2>
+<dl class="row">
+    @foreach (var claim in User.Claims)
+    {
+        <dt class="col-sm-3">@claim.Type</dt>
+        <dd class="col-sm-9 text-break">@claim.Value</dd>
+    }
+</dl>
+
+<h2 class="h5 mt-4">Session properties</h2>
+<dl class="row">
+    @if (auth.Properties is not null)
+    {
+        foreach (var item in auth.Properties.Items)
+        {
+            <dt class="col-sm-3">@item.Key</dt>
+            <dd class="col-sm-9 text-break">@item.Value</dd>
+        }
+    }
+</dl>

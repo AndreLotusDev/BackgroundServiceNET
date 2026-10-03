@@ -1,0 +1,28 @@
+@model LoggedOutViewModel
+@{
+    ViewData["Title"] = "Logged out";
+}
+
+<h1 class="h3">You are now logged out</h1>
+
+@if (Model.PostLogoutRedirectUri is not null)
+{
+    <p>Click <a id="post-logout-redirect" href="@Model.PostLogoutRedirectUri">here</a> to return to <strong>@Model.ClientName</strong>.</p>
+}
+
+@if (Model.SignOutIframeUrl is not null)
+{
+    <iframe width="0" height="0" class="d-none" src="@Model.SignOutIframeUrl"></iframe>
+}
+
+@section Scripts {
+    @if (Model.PostLogoutRedirectUri is not null)
+    {
+        <script>
+            // Give the front-channel sign-out iframe a moment, then return to the client.
+            window.addEventListener("load", function () {
+                setTimeout(function () { document.getElementById("post-logout-redirect").click(); }, 500);
+            });
+        </script>
+    }
+}
