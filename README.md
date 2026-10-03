@@ -26,6 +26,31 @@ Web and Worker do not reference each other. They only share `Contracts` and `Ser
 - .NET 10 SDK
 - Docker (needed from task 02 on, for LocalStack)
 
+## Local AWS (LocalStack)
+
+```bash
+docker compose up -d
+```
+
+(`podman compose up -d` works too.) This starts:
+
+- **LocalStack 4.12** on http://localhost:4566 with S3 and SQS. On startup, [localstack/init/ready.d](localstack/init/ready.d/01-create-resources.sh) creates:
+  - bucket `steam-items-uploads`
+  - queue `file-uploaded` (dead-letter queue `file-uploaded-dlq` after 5 receives)
+  - an `s3:ObjectCreated:*` notification from the bucket to the queue
+- **s3manager** on http://localhost:8080 to browse the bucket.
+
+LocalStack keeps state only in memory: `docker compose down` wipes it, and the next `up` recreates the resources. Credentials are `test` / `test`, region `us-east-1`.
+
+Try it with the AWS CLI:
+
+```bash
+aws --endpoint-url http://localhost:4566 s3 cp test.xlsx s3://steam-items-uploads/
+aws --endpoint-url http://localhost:4566 sqs receive-message --queue-url http://localhost:4566/000000000000/file-uploaded
+```
+
+The first message on the queue is an `s3:TestEvent`, which S3 sends when the notification is created.
+
 ## Run everything (one command)
 
 ```bash

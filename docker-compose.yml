@@ -1,0 +1,39 @@
+# Local AWS: LocalStack (S3 + SQS) and an S3 browser.
+# Run: docker compose up -d   (or: podman compose up -d)
+name: steam-items
+
+services:
+  localstack:
+    # Pinned: since 2026-03-23 the `latest` tag requires LOCALSTACK_AUTH_TOKEN.
+    image: localstack/localstack:4.12
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      SERVICES: s3,sqs
+      AWS_DEFAULT_REGION: us-east-1
+    volumes:
+      - ./localstack/init/ready.d:/etc/localstack/init/ready.d:ro
+    healthcheck:
+      # Healthy only after the ready.d scripts have finished.
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/init/ready | grep -q '\"completed\": true'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  s3manager:
+    image: cloudlena/s3manager:latest
+    container_name: s3manager
+    ports:
+      - "8080:8080"
+    environment:
+      ENDPOINT: localstack:4566
+      REGION: us-east-1
+      ACCESS_KEY_ID: test
+      SECRET_ACCESS_KEY: test
+      USE_SSL: "false"
+      BUCKET_LOOKUP: Path
+      LIST_RECURSIVE: "true"
+    depends_on:
+      localstack:
+        condition: service_healthy
