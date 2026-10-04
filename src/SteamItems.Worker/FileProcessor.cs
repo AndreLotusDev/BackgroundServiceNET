@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
+using SteamItems.Worker.Import;
 using SteamItems.Worker.Messaging;
 
 namespace SteamItems.Worker;
@@ -16,12 +17,12 @@ public sealed class WorkerOptions
 }
 
 /// <summary>
-/// Reads file events from the channel and processes them; the SQS message is deleted only after processing succeeds.
-/// For now processing is just logging the file (task 09 reads it).
+/// Reads file events from the channel and imports each file; the SQS message is deleted only after every file in it is imported.
 /// </summary>
 public sealed class FileProcessor(
     Channel<FileUploadedMessage> channel,
     IFileUploadedQueue queue,
+    IServiceScopeFactory scopeFactory,
     IOptions<WorkerOptions> options,
     ILogger<FileProcessor> logger) : BackgroundService
 {
@@ -60,16 +61,19 @@ public sealed class FileProcessor(
         }
     }
 
-    private Task ProcessAsync(int processorId, FileUploadedMessage message, CancellationToken stoppingToken)
+    private async Task ProcessAsync(int processorId, FileUploadedMessage message, CancellationToken stoppingToken)
     {
         foreach (var file in message.Events)
         {
             logger.LogInformation(
                 "Processor {ProcessorId} got file {Key} in bucket {Bucket} (message {MessageId})",
                 processorId, file.Key, file.Bucket, message.MessageId);
-        }
 
-        return Task.CompletedTask;
+            // One scope (and DbContext) per file.
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var importer = scope.ServiceProvider.GetRequiredService<IFileImporter>();
+            await importer.ImportAsync(file, stoppingToken);
+        }
     }
 
     private async Task DeleteAsync(FileUploadedMessage message)
