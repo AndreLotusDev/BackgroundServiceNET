@@ -18,6 +18,8 @@ src/
   SteamItems.Identity/         Duende IdentityServer + ASP.NET Identity (login, register, tokens)
   SteamItems.Web/              ASP.NET Core MVC (OIDC client of SteamItems.Identity)
   SteamItems.Worker/           Worker Service
+tests/
+  SteamItems.Web.Tests/        xUnit tests for the Web app (Excel export)
 ```
 
 Web and Worker do not reference each other. They only share `Contracts` and `ServiceDefaults`. Web talks to Identity over OIDC only.
@@ -86,8 +88,17 @@ Click **Log in** (or open **Profile**, which requires login). Test users come fr
 
 IdentityServer runs without a Duende license key (allowed for development/testing), so it logs license warnings at startup.
 
-## Build
+## Excel export
+
+On **Steam items** (`/Items`), save a selection and click **Download Excel**. The API has the same export at `GET /api/items/export` (try it from Swagger).
+The layout (sheet `Items`, columns `AppId | Name | Price | ReleaseDate`, header on row 1) is defined once in [ItemsWorkbook.cs](src/SteamItems.Contracts/Excel/ItemsWorkbook.cs). Export id, user id and creation time are stored as workbook custom properties.
+
+## Build and test
 
 ```bash
 dotnet build SteamItems.sln
+```
+
+```bash
+dotnet test SteamItems.sln
 ```

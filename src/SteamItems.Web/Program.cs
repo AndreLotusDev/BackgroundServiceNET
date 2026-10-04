@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using SteamItems.Web;
 using SteamItems.Web.Data;
+using SteamItems.Web.Export;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -16,6 +17,11 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<WebDbContext>(options => options.UseSqlite(
     builder.Configuration.GetConnectionString("WebDb")
         ?? throw new InvalidOperationException("Connection string 'WebDb' not found.")));
+
+// Excel export of the saved selection.
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IItemsExcelWriter, ItemsExcelWriter>();
+builder.Services.AddScoped<SelectionExporter>();
 
 // Cookie session for the MVC pages; anonymous users are challenged through SteamItems.Identity.
 var identity = builder.Configuration.GetSection("Identity");

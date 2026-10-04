@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SteamItems.Web.Data;
+using SteamItems.Web.Export;
 using SteamItems.Web.Models;
 
 namespace SteamItems.Web.Controllers;
 
 [Authorize]
-public class ItemsController(WebDbContext db) : Controller
+public class ItemsController(WebDbContext db, SelectionExporter exporter) : Controller
 {
     // Subject id issued by SteamItems.Identity (claims are not remapped, see Program.cs).
     private string UserId => User.FindFirst("sub")?.Value
@@ -52,6 +53,20 @@ public class ItemsController(WebDbContext db) : Controller
 
         TempData["StatusMessage"] = $"Saved {appIds.Count} selected item(s).";
         return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>Downloads the saved selection as an <c>.xlsx</c>.</summary>
+    [HttpGet]
+    public async Task<IActionResult> Export(CancellationToken cancellationToken)
+    {
+        var export = await exporter.ExportAsync(UserId, cancellationToken);
+        if (export is null)
+        {
+            TempData["ErrorMessage"] = "Save a selection before exporting.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        return File(export.Content, ExcelExport.ContentType, export.FileName);
     }
 
     private async Task<List<SteamItem>> LoadCatalogAsync(CancellationToken cancellationToken) =>
