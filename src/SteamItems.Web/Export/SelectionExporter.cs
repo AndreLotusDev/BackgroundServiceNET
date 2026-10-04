@@ -4,7 +4,7 @@ using SteamItems.Web.Data;
 
 namespace SteamItems.Web.Export;
 
-public sealed record ExcelExport(ExportInfo Info, string FileName, byte[] Content)
+public sealed record ExcelExport(ExportInfo Info, string FileName, int ItemCount, byte[] Content)
 {
     public const string ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 }
@@ -32,6 +32,6 @@ public sealed class SelectionExporter(WebDbContext db, IItemsExcelWriter writer,
 
         using var stream = new MemoryStream();
         writer.Write(stream, rows, info);
-        return new ExcelExport(info, $"steam-items-{now:yyyyMMdd-HHmmss}.xlsx", stream.ToArray());
+        return new ExcelExport(info, $"steam-items-{now:yyyyMMdd-HHmmss}.xlsx", rows.Count, stream.ToArray());
     }
 }

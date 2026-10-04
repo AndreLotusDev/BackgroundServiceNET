@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using SteamItems.Web;
 using SteamItems.Web.Data;
 using SteamItems.Web.Export;
+using SteamItems.Web.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -22,6 +23,10 @@ builder.Services.AddDbContext<WebDbContext>(options => options.UseSqlite(
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IItemsExcelWriter, ItemsExcelWriter>();
 builder.Services.AddScoped<SelectionExporter>();
+
+// Upload of the export to S3 (LocalStack in Development).
+builder.Services.AddS3FileStorage(builder.Configuration);
+builder.Services.AddScoped<ExportSubmitter>();
 
 // Cookie session for the MVC pages; anonymous users are challenged through SteamItems.Identity.
 var identity = builder.Configuration.GetSection("Identity");

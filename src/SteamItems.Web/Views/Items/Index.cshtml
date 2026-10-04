@@ -54,4 +54,8 @@
 
     <button type="submit" class="btn btn-primary">Save selection</button>
     <a asp-action="Export" class="btn btn-outline-secondary">Download Excel</a>
+    <button type="submit" form="upload-form" class="btn btn-outline-primary">Upload Excel</button>
 </form>
+
+@* Separate form: uploading uses the saved selection, not the checkboxes posted by the form above. *@
+<form id="upload-form" asp-action="Upload" method="post"></form>

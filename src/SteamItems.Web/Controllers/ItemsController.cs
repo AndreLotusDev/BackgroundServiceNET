@@ -4,11 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using SteamItems.Web.Data;
 using SteamItems.Web.Export;
 using SteamItems.Web.Models;
+using SteamItems.Web.Storage;
 
 namespace SteamItems.Web.Controllers;
 
 [Authorize]
-public class ItemsController(WebDbContext db, SelectionExporter exporter) : Controller
+public class ItemsController(WebDbContext db, SelectionExporter exporter, ExportSubmitter submitter) : Controller
 {
     // Subject id issued by SteamItems.Identity (claims are not remapped, see Program.cs).
     private string UserId => User.FindFirst("sub")?.Value
@@ -67,6 +68,33 @@ public class ItemsController(WebDbContext db, SelectionExporter exporter) : Cont
         }
 
         return File(export.Content, ExcelExport.ContentType, export.FileName);
+    }
+
+    /// <summary>Uploads the saved selection as an <c>.xlsx</c> for the Worker, then shows the export list.</summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Upload(CancellationToken cancellationToken)
+    {
+        ExportRecord? export;
+        try
+        {
+            export = await submitter.SubmitAsync(UserId, cancellationToken);
+        }
+        catch (FileStorageException)
+        {
+            // Already logged by the storage; the user gets a retryable message instead of an error page.
+            TempData["ErrorMessage"] = "The file could not be uploaded because file storage is unavailable. Try again in a moment.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (export is null)
+        {
+            TempData["ErrorMessage"] = "Save a selection before uploading.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        TempData["StatusMessage"] = $"Submitted {export.FileName} ({export.ItemCount} item(s)) for processing.";
+        return RedirectToAction(nameof(ExportsController.Index), "Exports");
     }
 
     private async Task<List<SteamItem>> LoadCatalogAsync(CancellationToken cancellationToken) =>

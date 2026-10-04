@@ -93,6 +93,11 @@ IdentityServer runs without a Duende license key (allowed for development/testin
 On **Steam items** (`/Items`), save a selection and click **Download Excel**. The API has the same export at `GET /api/items/export` (try it from Swagger).
 The layout (sheet `Items`, columns `AppId | Name | Price | ReleaseDate`, header on row 1) is defined once in [ItemsWorkbook.cs](src/SteamItems.Contracts/Excel/ItemsWorkbook.cs). Export id, user id and creation time are stored as workbook custom properties.
 
+## Upload to S3
+
+Needs LocalStack running (`docker compose up -d`). On **Steam items**, save a selection and click **Upload Excel**: the file goes to `s3://steam-items-uploads/exports/{userId}/{exportId}.xlsx` and you land on **Exports** (`/Exports`), which lists your uploads. The upload triggers the `file-uploaded` SQS message for the Worker. API: `POST /api/items/export`.
+Storage settings are in the `FileStorage` section of [appsettings.Development.json](src/SteamItems.Web/appsettings.Development.json). If LocalStack is down, the page shows an error and nothing is recorded.
+
 ## Build and test
 
 ```bash

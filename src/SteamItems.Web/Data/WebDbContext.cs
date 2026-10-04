@@ -6,6 +6,7 @@ public class WebDbContext(DbContextOptions<WebDbContext> options) : DbContext(op
 {
     public DbSet<SteamItem> SteamItems => Set<SteamItem>();
     public DbSet<UserSelection> UserSelections => Set<UserSelection>();
+    public DbSet<ExportRecord> Exports => Set<ExportRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,21 @@ public class WebDbContext(DbContextOptions<WebDbContext> options) : DbContext(op
             selection.HasKey(s => new { s.UserId, s.AppId });
             selection.Property(s => s.UserId).HasMaxLength(200);
             selection.HasOne(s => s.Item).WithMany().HasForeignKey(s => s.AppId);
+        });
+
+        modelBuilder.Entity<ExportRecord>(export =>
+        {
+            export.ToTable("Exports");
+            export.HasKey(e => e.Id);
+            export.Property(e => e.UserId).HasMaxLength(200);
+            export.Property(e => e.ObjectKey).HasMaxLength(500);
+            export.Property(e => e.FileName).HasMaxLength(200);
+            // SQLite cannot ORDER BY a DateTimeOffset, so store UTC ticks.
+            export.Property(e => e.CreatedAt).HasConversion(
+                v => v.UtcTicks,
+                v => new DateTimeOffset(v, TimeSpan.Zero));
+            export.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            export.HasIndex(e => new { e.UserId, e.CreatedAt });
         });
     }
 }
