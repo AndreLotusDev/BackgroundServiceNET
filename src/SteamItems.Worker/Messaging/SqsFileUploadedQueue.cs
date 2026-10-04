@@ -99,6 +99,19 @@ public sealed class SqsFileUploadedQueue : IFileUploadedQueue, IDisposable
         }
     }
 
+    public async Task ChangeVisibilityAsync(string receiptHandle, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await client.ChangeMessageVisibilityAsync(
+                await GetQueueUrlAsync(cancellationToken), receiptHandle, (int)timeout.TotalSeconds, cancellationToken);
+        }
+        catch (Exception ex) when (IsQueueFailure(ex, cancellationToken))
+        {
+            throw new QueueException($"Could not change the visibility of a message on queue '{settings.QueueName}'.", ex);
+        }
+    }
+
     // Resolved on first use, not in the constructor, so the Worker starts even when the queue is down.
     private async Task<string> GetQueueUrlAsync(CancellationToken cancellationToken) =>
         queueUrl ??= (await client.GetQueueUrlAsync(settings.QueueName, cancellationToken)).QueueUrl;

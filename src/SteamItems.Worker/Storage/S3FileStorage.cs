@@ -73,9 +73,13 @@ public sealed class S3FileStorage : IFileStorage, IDisposable
         }
         catch (Exception ex) when (IsStorageFailure(ex, cancellationToken))
         {
-            throw new FileStorageException($"Could not download '{key}' from bucket '{bucket}'.", ex);
+            throw new FileStorageException($"Could not download '{key}' from bucket '{bucket}'.", ex, IsTransient(ex));
         }
     }
+
+    // A 4xx answer (missing object, access denied) will be the same next time; 408 and 429 are worth another try.
+    private static bool IsTransient(Exception ex) => ex is not AmazonServiceException { StatusCode: var status }
+        || (int)status is >= 500 or 0 or 408 or 429;
 
     // Endpoint down, timeout, or an S3 error (missing object, bad credentials). Caller cancellation is not a failure.
     private static bool IsStorageFailure(Exception ex, CancellationToken cancellationToken) => ex switch

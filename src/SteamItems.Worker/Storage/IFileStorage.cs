@@ -13,5 +13,11 @@ public interface IFileStorage
 public sealed record StoredFile(string ETag, Stream Content);
 
 /// <summary>The storage is down, misconfigured or rejected the request.</summary>
-public sealed class FileStorageException(string message, Exception innerException)
-    : Exception(message, innerException);
+/// <param name="isTransient">
+/// True when trying again may work (endpoint down, timeout, 5xx). False when it will not (object missing, access denied).
+/// </param>
+public sealed class FileStorageException(string message, Exception innerException, bool isTransient = true)
+    : Exception(message, innerException)
+{
+    public bool IsTransient { get; } = isTransient;
+}

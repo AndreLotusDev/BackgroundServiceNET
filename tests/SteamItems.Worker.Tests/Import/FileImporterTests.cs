@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using SteamItems.Contracts.Excel;
 using SteamItems.Worker.Data;
@@ -209,21 +210,99 @@ public sealed class FileImporterTests : IDisposable
 
         await Assert.ThrowsAsync<FileStorageException>(() => ImportAsync(upload));
 
+        // The first try plus the retries of the storage pipeline.
+        Assert.Equal(1 + TestPipelines.StorageRetries, storage.Attempts);
         await using var db = CreateDb();
         Assert.Empty(await db.ProcessedFiles.ToListAsync());
     }
 
-    private async Task ImportAsync(FileUploadedEvent file)
+    [Fact]
+    public async Task A_short_storage_outage_is_retried_and_the_file_is_imported()
     {
+        storage.Put(Bucket, Key, TestWorkbook.Create(TestWorkbook.Rows, TestWorkbook.Info));
+        storage.FailuresBeforeSuccess = 2;
+
+        await ImportAsync(upload);
+
+        Assert.Equal(3, storage.Attempts);
         await using var db = CreateDb();
-        var importer = new FileImporter(storage, db, new FixedTimeProvider(Now), NullLogger<FileImporter>.Instance);
-        await importer.ImportAsync(file, CancellationToken.None);
+        Assert.Equal(FileStatus.Completed, Assert.Single(await db.ProcessedFiles.ToListAsync()).Status);
     }
 
-    private WorkerDbContext CreateDb() =>
-        new(new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection).Options);
+    [Fact]
+    public async Task A_missing_object_is_not_retried()
+    {
+        var error = await Assert.ThrowsAsync<FileStorageException>(() => ImportAsync(upload));
+
+        Assert.False(error.IsTransient);
+        Assert.Equal(1, storage.Attempts);
+    }
+
+    [Fact]
+    public async Task Cancelling_mid_file_commits_the_current_row_and_a_rerun_finishes_without_duplicates()
+    {
+        storage.Put(Bucket, Key, TestWorkbook.Create(TestWorkbook.Rows, TestWorkbook.Info));
+        using var shutdown = new CancellationTokenSource();
+
+        // Ctrl+C arrives while the first row is being saved.
+        var interceptor = new CancelOnFirstItemSave(shutdown);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ImportAsync(upload, shutdown.Token, interceptor));
+
+        await using (var db = CreateDb())
+        {
+            var file = Assert.Single(await db.ProcessedFiles.ToListAsync());
+            Assert.Equal(FileStatus.Processing, file.Status);
+            var item = Assert.Single(await db.ProcessedItems.ToListAsync());
+            Assert.Equal(ItemsWorkbook.FirstDataRow, item.RowNumber);
+        }
+
+        await ImportAsync(upload);
+
+        await using (var db = CreateDb())
+        {
+            var file = Assert.Single(await db.ProcessedFiles.ToListAsync());
+            Assert.Equal(FileStatus.Completed, file.Status);
+            Assert.Equal((3, 0), (file.ProcessedCount, file.FailedCount));
+            Assert.Equal([2, 3, 4], (await db.ProcessedItems.OrderBy(i => i.RowNumber).ToListAsync()).Select(i => i.RowNumber));
+        }
+    }
+
+    private async Task ImportAsync(
+        FileUploadedEvent file, CancellationToken cancellationToken = default, IInterceptor? interceptor = null)
+    {
+        await using var db = CreateDb(interceptor);
+        var importer = new FileImporter(
+            storage, db, new FixedTimeProvider(Now), TestPipelines.Create(), NullLogger<FileImporter>.Instance);
+        await importer.ImportAsync(file, cancellationToken);
+    }
+
+    private WorkerDbContext CreateDb(IInterceptor? interceptor = null)
+    {
+        var options = new DbContextOptionsBuilder<WorkerDbContext>().UseSqlite(connection);
+        if (interceptor is not null)
+        {
+            options.AddInterceptors(interceptor);
+        }
+
+        return new WorkerDbContext(options.Options);
+    }
 
     public void Dispose() => connection.Dispose();
+
+    /// <summary>Cancels the token right before the first item is written, as a shutdown in the middle of a row would.</summary>
+    private sealed class CancelOnFirstItemSave(CancellationTokenSource source) : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context!.ChangeTracker.Entries<ProcessedItem>().Any(e => e.State == EntityState.Added))
+            {
+                source.Cancel();
+            }
+
+            return ValueTask.FromResult(result);
+        }
+    }
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {

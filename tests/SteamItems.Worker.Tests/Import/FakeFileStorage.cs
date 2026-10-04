@@ -13,6 +13,12 @@ internal sealed class FakeFileStorage : IFileStorage
 
     public int Downloads { get; private set; }
 
+    /// <summary>Every call, including the failed ones.</summary>
+    public int Attempts { get; private set; }
+
+    /// <summary>The next calls that fail as if the storage were down, before the call works again.</summary>
+    public int FailuresBeforeSuccess { get; set; }
+
     /// <returns>The ETag of the stored content.</returns>
     public string Put(string bucket, string key, byte[] content)
     {
@@ -24,14 +30,15 @@ internal sealed class FakeFileStorage : IFileStorage
 
     public Task<StoredFile> DownloadAsync(string bucket, string key, CancellationToken cancellationToken)
     {
-        if (IsDown)
+        Attempts++;
+        if (IsDown || FailuresBeforeSuccess-- > 0)
         {
             throw new FileStorageException($"Could not download '{key}' from bucket '{bucket}'.", new IOException("Connection refused"));
         }
 
         if (!objects.TryGetValue((bucket, key), out var content))
         {
-            throw new FileStorageException($"Could not download '{key}' from bucket '{bucket}'.", new FileNotFoundException(key));
+            throw new FileStorageException($"Could not download '{key}' from bucket '{bucket}'.", new FileNotFoundException(key), isTransient: false);
         }
 
         Downloads++;

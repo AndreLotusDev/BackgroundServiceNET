@@ -1,7 +1,10 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Registry;
 using SteamItems.Worker.Data;
 using SteamItems.Worker.Messaging;
+using SteamItems.Worker.Resilience;
 using SteamItems.Worker.Storage;
 
 namespace SteamItems.Worker.Import;
@@ -13,24 +16,34 @@ public interface IFileImporter
     /// a finished file is skipped and an unfinished one resumes after its last stored row.
     /// </summary>
     /// <exception cref="FileStorageException">The file could not be downloaded; the event should be retried.</exception>
+    /// <exception cref="Polly.CircuitBreaker.BrokenCircuitException">Downloads are paused because the storage keeps failing; retry later.</exception>
+    /// <exception cref="OperationCanceledException">
+    /// Cancelled. The row being stored when cancellation came is still committed; the file stays <see cref="FileStatus.Processing"/>.
+    /// </exception>
     Task ImportAsync(FileUploadedEvent upload, CancellationToken cancellationToken);
 }
 
 /// <summary>
 /// Stores a file row by row. Each row is its own commit, so an interrupted file keeps the rows already stored.
 /// A bad row is stored as <see cref="ItemStatus.Failed"/> and the rest of the file continues.
+/// Downloads go through <see cref="WorkerPipelines.Storage"/> and saves through <see cref="WorkerPipelines.Database"/>.
 /// </summary>
 public sealed class FileImporter(
     IFileStorage storage,
     WorkerDbContext db,
     TimeProvider timeProvider,
+    ResiliencePipelineProvider<string> pipelines,
     ILogger<FileImporter> logger) : IFileImporter
 {
     private const int SqliteConstraintError = 19;
 
+    private readonly ResiliencePipeline storagePipeline = pipelines.GetPipeline(WorkerPipelines.Storage);
+    private readonly ResiliencePipeline databasePipeline = pipelines.GetPipeline(WorkerPipelines.Database);
+
     public async Task ImportAsync(FileUploadedEvent upload, CancellationToken cancellationToken)
     {
-        var stored = await storage.DownloadAsync(upload.Bucket, upload.Key, cancellationToken);
+        var stored = await storagePipeline.ExecuteAsync(
+            async token => await storage.DownloadAsync(upload.Bucket, upload.Key, token), cancellationToken);
         await using var content = stored.Content;
 
         var file = await db.ProcessedFiles.SingleOrDefaultAsync(
@@ -67,14 +80,14 @@ public sealed class FileImporter(
             file.Status = FileStatus.Failed;
             file.Error = ex.Message;
             file.CompletedAt = timeProvider.GetUtcNow();
-            await db.SaveChangesAsync(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
             logger.LogWarning("File {Key} rejected: {Reason}", upload.Key, ex.Message);
             return;
         }
 
         file.ExportId = workbook.ExportId;
         file.UserId = workbook.UserId;
-        await db.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
 
         await StoreRowsAsync(file, workbook.Rows, cancellationToken);
 
@@ -82,7 +95,7 @@ public sealed class FileImporter(
         file.FailedCount = await CountAsync(file, ItemStatus.Failed, cancellationToken);
         file.Status = FileStatus.Completed;
         file.CompletedAt = timeProvider.GetUtcNow();
-        await db.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(cancellationToken);
 
         logger.LogInformation(
             "Imported {Key}: {Processed} processed, {Failed} failed (file {FileId}, export {ExportId})",
@@ -104,7 +117,7 @@ public sealed class FileImporter(
 
         try
         {
-            await db.SaveChangesAsync(cancellationToken);
+            await SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (IsConstraintViolation(ex))
         {
@@ -131,7 +144,14 @@ public sealed class FileImporter(
                 continue;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
+            // Shutdown is checked between rows only: a row that was started is committed.
+            if (cancellationToken.IsCancellationRequested)
+            {
+                logger.LogInformation(
+                    "Stopping file {FileId} before row {Row}; it resumes from there when the message comes back",
+                    file.Id, row.RowNumber);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
 
             if (!row.IsValid)
             {
@@ -142,7 +162,7 @@ public sealed class FileImporter(
             db.ProcessedItems.Add(item);
             try
             {
-                await db.SaveChangesAsync(cancellationToken);
+                await SaveChangesAsync(CancellationToken.None);
             }
             catch (DbUpdateException ex) when (IsConstraintViolation(ex))
             {
@@ -172,6 +192,9 @@ public sealed class FileImporter(
         RawReleaseDate = row.Raw?.ReleaseDate,
         ProcessedAt = timeProvider.GetUtcNow(),
     };
+
+    private async Task SaveChangesAsync(CancellationToken cancellationToken) =>
+        await databasePipeline.ExecuteAsync(async token => await db.SaveChangesAsync(token), cancellationToken);
 
     private Task<int> CountAsync(ProcessedFile file, ItemStatus status, CancellationToken cancellationToken) =>
         db.ProcessedItems.CountAsync(i => i.FileId == file.Id && i.Status == status, cancellationToken);
