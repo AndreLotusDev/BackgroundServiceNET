@@ -20,6 +20,7 @@ src/
   SteamItems.Worker/           Worker Service
 tests/
   SteamItems.Web.Tests/        xUnit tests for the Web app (Excel export)
+  SteamItems.Worker.Tests/     xUnit tests for the Worker (S3 event parsing, listener/processor)
 ```
 
 Web and Worker do not reference each other. They only share `Contracts` and `ServiceDefaults`. Web talks to Identity over OIDC only.
