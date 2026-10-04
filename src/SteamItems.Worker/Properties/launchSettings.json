@@ -1,9 +1,10 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
     "SteamItems.Worker": {
       "commandName": "Project",
       "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5290",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }

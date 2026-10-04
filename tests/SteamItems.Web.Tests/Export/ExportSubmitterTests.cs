@@ -53,7 +53,7 @@ public sealed class ExportSubmitterTests : IDisposable
         Assert.Equal("steam-items-20261004-123000.xlsx", saved.FileName);
         Assert.Equal(2, saved.ItemCount);
         Assert.Equal(Now, saved.CreatedAt);
-        Assert.Equal(ExportStatus.Uploaded, saved.Status);
+        Assert.Equal(ExportStatus.Pending, saved.Status);
     }
 
     [Fact]

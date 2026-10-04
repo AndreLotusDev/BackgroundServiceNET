@@ -38,7 +38,13 @@ public class WebDbContext(DbContextOptions<WebDbContext> options) : DbContext(op
                 v => v.UtcTicks,
                 v => new DateTimeOffset(v, TimeSpan.Zero));
             export.Property(e => e.Status).HasConversion<string>().HasMaxLength(50);
+            export.Property(e => e.Error).HasMaxLength(1000);
+            export.Property(e => e.CompletedAt).HasConversion(
+                v => v.HasValue ? v.Value.UtcTicks : (long?)null,
+                v => v.HasValue ? new DateTimeOffset(v.Value, TimeSpan.Zero) : null);
             export.HasIndex(e => new { e.UserId, e.CreatedAt });
+            // The status poller looks up the exports that are not finished.
+            export.HasIndex(e => e.Status);
         });
     }
 }

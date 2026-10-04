@@ -1,10 +1,12 @@
-@model List<SteamItems.Web.Data.ExportRecord>
+@using SteamItems.Web.Data
+@using SteamItems.Web.Status
+@model List<ExportRecord>
 @{
     ViewData["Title"] = "Exports";
 }
 
 <h1>Exports</h1>
-<p>Excel files you submitted for processing.</p>
+<p>Excel files you submitted for processing. The status updates live while the Worker processes them.</p>
 
 @if (TempData["StatusMessage"] is string status)
 {
@@ -17,27 +19,43 @@
 }
 else
 {
-    <table class="table table-sm align-middle">
+    @* Not id="exports": that would be window.exports, and the SignalR UMD bundle would attach itself to it. *@
+    <table id="export-list" class="table table-sm align-middle" data-hub-url="@ExportsHub.Path">
         <thead>
             <tr>
                 <th scope="col">Created (UTC)</th>
                 <th scope="col">File</th>
                 <th scope="col" class="text-end">Items</th>
-                <th scope="col">Storage key</th>
                 <th scope="col">Status</th>
+                <th scope="col" class="text-end">Processed</th>
+                <th scope="col" class="text-end">Failed</th>
+                <th scope="col">Completed (UTC)</th>
+                <th scope="col">Storage key</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var export in Model)
             {
-                <tr>
+                var started = export.Status != ExportStatus.Pending;
+                <tr data-export-id="@export.Id">
                     <td>@export.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
                     <td>@export.FileName</td>
                     <td class="text-end">@export.ItemCount</td>
+                    <td>
+                        <span data-field="status" class="badge @export.Status.BadgeClass()">@export.Status.DisplayText()</span>
+                        <div data-field="error" class="small text-danger" hidden="@(export.Error is null)">@export.Error</div>
+                    </td>
+                    <td data-field="processed" class="text-end">@(started ? export.ProcessedCount.ToString() : "–")</td>
+                    <td data-field="failed" class="text-end">@(started ? export.FailedCount.ToString() : "–")</td>
+                    <td data-field="completed">@export.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss")</td>
                     <td><code>@export.ObjectKey</code></td>
-                    <td><span class="badge text-bg-secondary">@export.Status</span></td>
                 </tr>
             }
         </tbody>
     </table>
+}
+
+@section Scripts {
+    <script src="~/lib/microsoft-signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/js/exports.js" asp-append-version="true"></script>
 }

@@ -44,7 +44,7 @@ public sealed class ExportSubmitter(SelectionExporter exporter, IFileStorage sto
             FileName = export.FileName,
             ItemCount = export.ItemCount,
             CreatedAt = info.CreatedAt,
-            Status = ExportStatus.Uploaded,
+            Status = ExportStatus.Pending,
         };
         db.Exports.Add(record);
         await db.SaveChangesAsync(cancellationToken);

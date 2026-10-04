@@ -1,12 +1,15 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using SteamItems.Worker;
 using SteamItems.Worker.Data;
 using SteamItems.Worker.Import;
 using SteamItems.Worker.Messaging;
 using SteamItems.Worker.Resilience;
+using SteamItems.Worker.Status;
 using SteamItems.Worker.Storage;
 
-var builder = Host.CreateApplicationBuilder(args);
+// A web host (not only a generic host) because the Worker also serves the status endpoint that Web polls.
+var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // ShutdownTimeout: how long Ctrl+C / SIGTERM waits for the processors to stop after their current row.
@@ -30,6 +33,9 @@ builder.Services.AddS3FileStorage(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IFileImporter, FileImporter>();
 
+// Outcome of each file for Web (task 11).
+builder.Services.AddScoped<FileStatusQuery>();
+
 // Retry, backoff and circuit breaker for SQS, S3 and SQLite.
 builder.Services.AddWorkerResilience();
 
@@ -37,12 +43,15 @@ builder.Services.AddWorkerResilience();
 builder.Services.AddHostedService<FileProcessor>();
 builder.Services.AddHostedService<SqsListener>();
 
-var host = builder.Build();
+var app = builder.Build();
 
-if (builder.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    using var scope = host.Services.CreateScope();
+    using var scope = app.Services.CreateScope();
     await scope.ServiceProvider.GetRequiredService<WorkerDbContext>().Database.MigrateAsync();
 }
 
-host.Run();
+app.MapFileStatus();
+app.MapDefaultEndpoints();
+
+app.Run();

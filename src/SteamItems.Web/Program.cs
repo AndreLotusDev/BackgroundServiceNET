@@ -6,6 +6,7 @@ using Microsoft.OpenApi;
 using SteamItems.Web;
 using SteamItems.Web.Data;
 using SteamItems.Web.Export;
+using SteamItems.Web.Status;
 using SteamItems.Web.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,9 @@ builder.Services.AddScoped<SelectionExporter>();
 // Upload of the export to S3 (LocalStack in Development).
 builder.Services.AddS3FileStorage(builder.Configuration);
 builder.Services.AddScoped<ExportSubmitter>();
+
+// Outcome of each export: polled from the Worker's status endpoint, stored in web.db and pushed to the browser (SignalR).
+builder.Services.AddExportStatus(builder.Configuration);
 
 // Cookie session for the MVC pages; anonymous users are challenged through SteamItems.Identity.
 var identity = builder.Configuration.GetSection("Identity");
@@ -138,6 +142,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 app.MapControllers();
+app.MapHub<ExportsHub>(ExportsHub.Path);
 
 app.MapDefaultEndpoints();
 

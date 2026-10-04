@@ -77,7 +77,7 @@ Web (https://localhost:7281). Needs Identity running; login only works over HTTP
 dotnet run --project src/SteamItems.Web --launch-profile https
 ```
 
-Worker (logs a heartbeat every 5 seconds and stops cleanly on `Ctrl+C`):
+Worker (listens to the upload queue, serves file status on http://localhost:5290, stops cleanly on `Ctrl+C`):
 
 ```bash
 dotnet run --project src/SteamItems.Worker
@@ -98,6 +98,12 @@ The layout (sheet `Items`, columns `AppId | Name | Price | ReleaseDate`, header 
 
 Needs LocalStack running (`docker compose up -d`). On **Steam items**, save a selection and click **Upload Excel**: the file goes to `s3://steam-items-uploads/exports/{userId}/{exportId}.xlsx` and you land on **Exports** (`/Exports`), which lists your uploads. The upload triggers the `file-uploaded` SQS message for the Worker. API: `POST /api/items/export`.
 Storage settings are in the `FileStorage` section of [appsettings.Development.json](src/SteamItems.Web/appsettings.Development.json). If LocalStack is down, the page shows an error and nothing is recorded.
+
+## Job status
+
+After an upload, **Exports** shows the Worker's outcome: `Pending` → `Processing` (rows so far) → `Completed`, `Completed with errors` (with the failed count) or `Failed` (with the reason). The row updates live over SignalR (`/hubs/exports`), with no page reload.
+
+Web polls the Worker's status endpoint, `GET http://localhost:5290/api/files/status?key=…`, every 5 seconds for unfinished exports and stores the result in `web.db`. Web never reads `worker.db`. While the Worker is down, exports stay `Pending` and update once it is back. Settings: `WorkerStatus` section in Web's [appsettings.Development.json](src/SteamItems.Web/appsettings.Development.json).
 
 ## Build and test
 
