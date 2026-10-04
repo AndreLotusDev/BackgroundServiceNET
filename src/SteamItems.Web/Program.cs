@@ -1,14 +1,21 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using SteamItems.Web;
+using SteamItems.Web.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// web.db: Steam items catalog (seeded by the migration) and each user's selection.
+builder.Services.AddDbContext<WebDbContext>(options => options.UseSqlite(
+    builder.Configuration.GetConnectionString("WebDb")
+        ?? throw new InvalidOperationException("Connection string 'WebDb' not found.")));
 
 // Cookie session for the MVC pages; anonymous users are challenged through SteamItems.Identity.
 var identity = builder.Configuration.GetSection("Identity");
@@ -86,7 +93,12 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<WebDbContext>().Database.MigrateAsync();
+}
+else
 {
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.

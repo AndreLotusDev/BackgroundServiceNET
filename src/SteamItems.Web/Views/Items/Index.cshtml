@@ -1,0 +1,52 @@
+@using System.Globalization
+@model ItemSelectionViewModel
+@{
+    ViewData["Title"] = "Steam items";
+    var usd = CultureInfo.GetCultureInfo("en-US");
+}
+
+<h1>Steam items</h1>
+<p>Select the items to export.</p>
+
+@if (TempData["StatusMessage"] is string status)
+{
+    <div class="alert alert-success" role="status">@status</div>
+}
+
+<form asp-action="Index" method="post">
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+    }
+
+    <table class="table table-sm table-hover align-middle">
+        <thead>
+            <tr>
+                <th scope="col"><span class="visually-hidden">Select</span></th>
+                <th scope="col">App id</th>
+                <th scope="col">Name</th>
+                <th scope="col" class="text-end">Price</th>
+                <th scope="col">Release date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var id = $"item-{item.AppId}";
+                <tr>
+                    <td>
+                        <input class="form-check-input" type="checkbox" id="@id"
+                               name="@nameof(Model.SelectedAppIds)" value="@item.AppId"
+                               checked="@Model.SelectedAppIds.Contains(item.AppId)" />
+                    </td>
+                    <td>@item.AppId</td>
+                    <td><label for="@id">@item.Name</label></td>
+                    <td class="text-end">@(item.Price == 0 ? "Free" : item.Price.ToString("C", usd))</td>
+                    <td>@item.ReleaseDate.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Save selection</button>
+</form>
