@@ -17,3 +17,4 @@ Rule: a task does not start until its **Questions to resolve first** are answere
 | 09 | [Worker: process file row by row](09-worker-process-file.md) | 07, 08 |
 | 10 | [Worker: errors and shutdown](10-worker-errors-shutdown.md) | 09 |
 | 11 | [Job status back to the user](11-job-status.md) | 09 |
+| 12 | [Show the processed rows](12-processed-items.md) | 11 |

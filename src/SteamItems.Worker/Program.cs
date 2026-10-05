@@ -36,6 +36,9 @@ builder.Services.AddScoped<IFileImporter, FileImporter>();
 // Outcome of each file for Web (task 11).
 builder.Services.AddScoped<FileStatusQuery>();
 
+// Rows of each file for the export details page (task 12).
+builder.Services.AddScoped<FileItemsQuery>();
+
 // Retry, backoff and circuit breaker for SQS, S3 and SQLite.
 builder.Services.AddWorkerResilience();
 
@@ -52,6 +55,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapFileStatus();
+app.MapFileItems();
 app.MapDefaultEndpoints();
 
 app.Run();

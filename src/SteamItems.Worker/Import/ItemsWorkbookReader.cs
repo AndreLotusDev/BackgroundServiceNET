@@ -35,6 +35,8 @@ public static class ItemsWorkbookReader
 {
     public const int MaxNameLength = 200;
 
+    private const int MaxFoundLength = 40;
+
     /// <exception cref="InvalidWorkbookException">Not an .xlsx, no <c>Items</c> sheet, or the header does not match.</exception>
     public static ItemsFile Read(Stream content)
     {
@@ -102,7 +104,7 @@ public static class ItemsWorkbookReader
         }
         else
         {
-            errors.Add($"{ItemsWorkbook.AppId.Header} must be a positive whole number.");
+            errors.Add($"{ItemsWorkbook.AppId.Header} must be a positive whole number, {Found(appIdCell)}.");
         }
 
         string? name = null;
@@ -117,7 +119,7 @@ public static class ItemsWorkbookReader
         }
         else
         {
-            errors.Add($"{ItemsWorkbook.Name.Header} must be non-empty text.");
+            errors.Add($"{ItemsWorkbook.Name.Header} must be non-empty text, {Found(nameCell)}.");
         }
 
         decimal? price = null;
@@ -127,7 +129,7 @@ public static class ItemsWorkbookReader
         }
         else
         {
-            errors.Add($"{ItemsWorkbook.Price.Header} must be a number zero or greater.");
+            errors.Add($"{ItemsWorkbook.Price.Header} must be a number zero or greater, {Found(priceCell)}.");
         }
 
         DateOnly? releaseDate = null;
@@ -137,7 +139,7 @@ public static class ItemsWorkbookReader
         }
         else
         {
-            errors.Add($"{ItemsWorkbook.ReleaseDate.Header} must be a date.");
+            errors.Add($"{ItemsWorkbook.ReleaseDate.Header} must be a date, {Found(releaseDateCell)}.");
         }
 
         if (errors.Count == 0)
@@ -148,6 +150,14 @@ public static class ItemsWorkbookReader
         var raw = new RawCells(Text(appIdCell), Text(nameCell), Text(priceCell), Text(releaseDateCell));
         return new ItemsFileRow(row, appId, name, price, releaseDate, string.Join(" ", errors), raw);
     }
+
+    // The bad value inside the row error, so the user sees what did not parse. Cut short: the error is at most 500 characters.
+    private static string Found(IXLCell cell) => Text(cell) switch
+    {
+        null => "found an empty cell",
+        { Length: > MaxFoundLength } text => $"found \"{text[..MaxFoundLength]}…\"",
+        var text => $"found \"{text}\"",
+    };
 
     // The cell as the user would read it; null when empty.
     private static string? Text(IXLCell cell) =>

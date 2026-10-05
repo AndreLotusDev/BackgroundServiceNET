@@ -50,12 +50,27 @@ public sealed class ItemsWorkbookReaderTests
 
         var row = Assert.Single(file.Rows);
         Assert.False(row.IsValid);
-        Assert.Contains("AppId", row.Error);
-        Assert.Contains("Name", row.Error);
-        Assert.Contains("Price", row.Error);
-        Assert.Contains("ReleaseDate", row.Error);
+        // Each message names the column and the value that did not parse.
+        Assert.Contains("AppId must be a positive whole number, found \"12.5\".", row.Error);
+        Assert.Contains("Name must be non-empty text, found \" \".", row.Error);
+        Assert.Contains("Price must be a number zero or greater, found \"-1\".", row.Error);
+        Assert.Contains("ReleaseDate must be a date, found \"2022-02-24\".", row.Error);
         Assert.Equal((null, null, null, null), (row.AppId, row.Name, row.Price, row.ReleaseDate));
         Assert.Equal(new RawCells("12.5", " ", "-1", "2022-02-24"), row.Raw);
+    }
+
+    [Fact]
+    public void An_empty_cell_and_a_long_value_are_described_in_the_error()
+    {
+        var file = Read(TestWorkbook.Create(TestWorkbook.Rows.Take(1), edit: sheet =>
+        {
+            sheet.Cell(2, ItemsWorkbook.Price.Number).Clear();
+            sheet.Cell(2, ItemsWorkbook.ReleaseDate.Number).Value = new string('x', 100);
+        }));
+
+        var row = Assert.Single(file.Rows);
+        Assert.Contains("Price must be a number zero or greater, found an empty cell.", row.Error);
+        Assert.Contains($"ReleaseDate must be a date, found \"{new string('x', 40)}…\".", row.Error);
     }
 
     [Fact]

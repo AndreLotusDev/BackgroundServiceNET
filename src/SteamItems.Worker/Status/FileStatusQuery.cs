@@ -42,7 +42,7 @@ public sealed class FileStatusQuery(WorkerDbContext db)
             progress.Where(p => p.FileId == fileId && p.Status == status).Sum(p => p.Count);
     }
 
-    private static FileProcessingStatus ToContract(FileStatus status) => status switch
+    internal static FileProcessingStatus ToContract(FileStatus status) => status switch
     {
         FileStatus.Processing => FileProcessingStatus.Processing,
         FileStatus.Completed => FileProcessingStatus.Completed,

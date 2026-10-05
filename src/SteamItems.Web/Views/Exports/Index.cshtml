@@ -39,7 +39,7 @@ else
                 var started = export.Status != ExportStatus.Pending;
                 <tr data-export-id="@export.Id">
                     <td>@export.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    <td>@export.FileName</td>
+                    <td><a asp-action="Details" asp-route-id="@export.Id">@export.FileName</a></td>
                     <td class="text-end">@export.ItemCount</td>
                     <td>
                         <span data-field="status" class="badge @export.Status.BadgeClass()">@export.Status.DisplayText()</span>

@@ -1,0 +1,159 @@
+@using System.Globalization
+@using SteamItems.Contracts.Status
+@using SteamItems.Web.Data
+@using SteamItems.Web.Status
+@model ExportDetails
+@{
+    var export = Model.Export;
+    var rows = Model.Rows;
+    ViewData["Title"] = export.FileName;
+    var started = export.Status != ExportStatus.Pending;
+    var waiting = Model.State is ExportRowsState.Pending or ExportRowsState.Processing;
+}
+
+<p><a asp-action="Index">&larr; Exports</a></p>
+<h1 class="h3">@export.FileName</h1>
+
+@* data-status: export-details.js reloads the page when the Worker's outcome for this export changes. *@
+<dl id="export-header" class="row mb-4" data-export-id="@export.Id" data-status="@export.Status" data-hub-url="@ExportsHub.Path">
+    <dt class="col-sm-2">Status</dt>
+    <dd class="col-sm-10"><span class="badge @export.Status.BadgeClass()">@export.Status.DisplayText()</span></dd>
+    <dt class="col-sm-2">Created (UTC)</dt>
+    <dd class="col-sm-10">@export.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+    <dt class="col-sm-2">Items</dt>
+    <dd class="col-sm-10">@export.ItemCount</dd>
+    <dt class="col-sm-2">Processed</dt>
+    <dd class="col-sm-10">@(started ? export.ProcessedCount.ToString() : "–")</dd>
+    <dt class="col-sm-2">Failed</dt>
+    <dd class="col-sm-10">@(started ? export.FailedCount.ToString() : "–")</dd>
+    <dt class="col-sm-2">Completed (UTC)</dt>
+    <dd class="col-sm-10">@(export.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "–")</dd>
+    <dt class="col-sm-2">Storage key</dt>
+    <dd class="col-sm-10"><code>@export.ObjectKey</code></dd>
+</dl>
+
+@switch (Model.State)
+{
+    case ExportRowsState.Pending:
+        <div class="alert alert-secondary" role="status">
+            The Worker has not picked up this file yet. Its rows show here once it is imported; this page reloads by itself.
+        </div>
+        break;
+    case ExportRowsState.Processing:
+        <div class="alert alert-info" role="status">
+            The Worker is still importing this file. Its rows show here once it is done; this page reloads by itself.
+        </div>
+        break;
+    case ExportRowsState.Rejected:
+        <div class="alert alert-danger" role="alert">
+            The Worker could not read this file, so no rows were stored.
+            @if (export.Error is not null)
+            {
+                <div class="small mt-1">@export.Error</div>
+            }
+        </div>
+        break;
+    case ExportRowsState.WorkerUnavailable:
+        <div class="alert alert-warning" role="alert">
+            The rows are not available right now: the Worker did not answer. Try again in a moment.
+        </div>
+        break;
+    case ExportRowsState.Missing:
+        <div class="alert alert-warning" role="alert">The Worker has no rows for this file.</div>
+        break;
+    case ExportRowsState.Available when rows is not null:
+        <ul class="nav nav-pills mb-3">
+            @foreach (var (label, filter, count) in new (string, FileItemStatus?, int)[]
+            {
+                ("All", null, rows.ProcessedCount + rows.FailedCount),
+                ("Processed", FileItemStatus.Processed, rows.ProcessedCount),
+                ("Failed", FileItemStatus.Failed, rows.FailedCount),
+            })
+            {
+                var active = rows.Filter == filter;
+                <li class="nav-item">
+                    <a class="nav-link @(active ? "active" : "")" aria-current="@(active ? "page" : null)"
+                       asp-action="Details" asp-route-id="@export.Id" asp-route-status="@filter">
+                        @label <span class="badge text-bg-light">@count</span>
+                    </a>
+                </li>
+            }
+        </ul>
+
+        @if (rows.Items.Count == 0)
+        {
+            <p>
+                @(rows.TotalCount == 0 ? "No rows." : "No rows on this page.")
+                @if (rows.TotalCount > 0)
+                {
+                    <a asp-action="Details" asp-route-id="@export.Id" asp-route-status="@rows.Filter">Go to the first page</a>
+                }
+            </p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-end">Row</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">AppId</th>
+                        <th scope="col">Name</th>
+                        <th scope="col" class="text-end">Price</th>
+                        <th scope="col">Release date</th>
+                        <th scope="col">Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in rows.Items)
+                    {
+                        var failed = item.Status == FileItemStatus.Failed;
+                        <tr class="@(failed ? "table-danger" : "")">
+                            <td class="text-end">@item.RowNumber</td>
+                            <td><span class="badge @(failed ? "text-bg-danger" : "text-bg-success")">@item.Status</span></td>
+                            <td class="text-end">@item.AppId</td>
+                            <td>@item.Name</td>
+                            <td class="text-end">@item.Price?.ToString("0.00", CultureInfo.InvariantCulture)</td>
+                            <td>@item.ReleaseDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                            <td class="small text-danger">@item.Error</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (rows.PageCount > 1)
+        {
+            var first = rows.Page <= 1;
+            var last = rows.Page >= rows.PageCount;
+            <nav aria-label="Row pages" class="d-flex align-items-center gap-3">
+                <ul class="pagination mb-0">
+                    <li class="page-item @(first ? "disabled" : "")">
+                        <a class="page-link" asp-action="Details" asp-route-id="@export.Id" asp-route-status="@rows.Filter">First</a>
+                    </li>
+                    <li class="page-item @(first ? "disabled" : "")">
+                        <a class="page-link" asp-action="Details" asp-route-id="@export.Id" asp-route-status="@rows.Filter"
+                           asp-route-page="@(rows.Page - 1)">Previous</a>
+                    </li>
+                    <li class="page-item @(last ? "disabled" : "")">
+                        <a class="page-link" asp-action="Details" asp-route-id="@export.Id" asp-route-status="@rows.Filter"
+                           asp-route-page="@(rows.Page + 1)">Next</a>
+                    </li>
+                    <li class="page-item @(last ? "disabled" : "")">
+                        <a class="page-link" asp-action="Details" asp-route-id="@export.Id" asp-route-status="@rows.Filter"
+                           asp-route-page="@rows.PageCount">Last</a>
+                    </li>
+                </ul>
+                <span class="text-body-secondary">Page @rows.Page of @rows.PageCount, @rows.TotalCount rows</span>
+            </nav>
+        }
+        break;
+}
+
+@section Scripts {
+    @if (waiting)
+    {
+        <script src="~/lib/microsoft-signalr/dist/browser/signalr.min.js"></script>
+        <script src="~/js/export-details.js" asp-append-version="true"></script>
+    }
+}

@@ -7,7 +7,7 @@ public static class ExportStatusServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the export status flow: the Worker status client (configured from the <c>WorkerStatus</c> section),
-    /// the poller and the SignalR hub that pushes changes to the browser. Map the hub with <see cref="ExportsHub.Path"/>.
+    /// the poller, the reader of an export's rows and the SignalR hub that pushes changes to the browser. Map the hub with <see cref="ExportsHub.Path"/>.
     /// </summary>
     public static IServiceCollection AddExportStatus(this IServiceCollection services, IConfiguration configuration)
     {
@@ -18,6 +18,11 @@ public static class ExportStatusServiceCollectionExtensions
 
         services.AddHttpClient<IWorkerStatusClient, HttpWorkerStatusClient>((provider, http) =>
             http.BaseAddress = provider.GetRequiredService<IOptions<WorkerStatusOptions>>().Value.BaseUrl);
+
+        // The rows of one export for its details page, from the same Worker.
+        services.AddHttpClient<IWorkerItemsClient, HttpWorkerItemsClient>((provider, http) =>
+            http.BaseAddress = provider.GetRequiredService<IOptions<WorkerStatusOptions>>().Value.BaseUrl);
+        services.AddScoped<ExportItemsReader>();
 
         services.AddSignalR();
         services.AddSingleton<IUserIdProvider, SubjectUserIdProvider>();
