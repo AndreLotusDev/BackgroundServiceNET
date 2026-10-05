@@ -5,55 +5,69 @@
     ViewData["Title"] = "Exports";
 }
 
-<h1>Exports</h1>
-<p>Excel files you submitted for processing. The status updates live while the Worker processes them.</p>
-
 @if (TempData["StatusMessage"] is string status)
 {
-    <div class="alert alert-success" role="status">@status</div>
+    <div class="alert fs-16 alert-success text-success" role="status">@status</div>
 }
 
-@if (Model.Count == 0)
-{
-    <p>No exports yet. Save a selection on <a asp-controller="Items" asp-action="Index">Steam items</a> and click <strong>Upload Excel</strong>.</p>
-}
-else
-{
-    @* Not id="exports": that would be window.exports, and the SignalR UMD bundle would attach itself to it. *@
-    <table id="export-list" class="table table-sm align-middle" data-hub-url="@ExportsHub.Path">
-        <thead>
-            <tr>
-                <th scope="col">Created (UTC)</th>
-                <th scope="col">File</th>
-                <th scope="col" class="text-end">Items</th>
-                <th scope="col">Status</th>
-                <th scope="col" class="text-end">Processed</th>
-                <th scope="col" class="text-end">Failed</th>
-                <th scope="col">Completed (UTC)</th>
-                <th scope="col">Storage key</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var export in Model)
-            {
-                var started = export.Status != ExportStatus.Pending;
-                <tr data-export-id="@export.Id">
-                    <td>@export.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    <td><a asp-action="Details" asp-route-id="@export.Id">@export.FileName</a></td>
-                    <td class="text-end">@export.ItemCount</td>
-                    <td>
-                        <span data-field="status" class="badge @export.Status.BadgeClass()">@export.Status.DisplayText()</span>
-                        <div data-field="error" class="small text-danger" hidden="@(export.Error is null)">@export.Error</div>
-                    </td>
-                    <td data-field="processed" class="text-end">@(started ? export.ProcessedCount.ToString() : "–")</td>
-                    <td data-field="failed" class="text-end">@(started ? export.FailedCount.ToString() : "–")</td>
-                    <td data-field="completed">@export.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    <td><code>@export.ObjectKey</code></td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+<div class="card bg-white rounded-10 border border-white mb-4">
+    <div class="p-20">
+        <h3 class="fs-18 fw-medium mb-1">Exports</h3>
+        <p class="fs-15 mb-0">Excel files you submitted for processing. The status updates live while the Worker processes them.</p>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="text-center px-20 pb-4">
+            <span class="material-symbols-outlined text-body" style="font-size: 48px;">inbox</span>
+            <p class="fs-16 mb-0">
+                No exports yet. Save a selection on <a asp-controller="Items" asp-action="Index" class="text-primary text-decoration-none">Steam items</a>
+                and click <strong>Upload Excel</strong>.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="default-table-area mx-minus-1">
+            <div class="table-responsive">
+                @* Not id="exports": that would be window.exports, and the SignalR UMD bundle would attach itself to it. *@
+                <table id="export-list" class="table align-middle w-100 text-nowrap" data-hub-url="@ExportsHub.Path">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="fw-medium">Created (UTC)</th>
+                            <th scope="col" class="fw-medium">File</th>
+                            <th scope="col" class="fw-medium text-end">Items</th>
+                            <th scope="col" class="fw-medium">Status</th>
+                            <th scope="col" class="fw-medium text-end">Processed</th>
+                            <th scope="col" class="fw-medium text-end">Failed</th>
+                            <th scope="col" class="fw-medium">Completed (UTC)</th>
+                            <th scope="col" class="fw-medium">Storage key</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var export in Model)
+                        {
+                            var started = export.Status != ExportStatus.Pending;
+                            <tr data-export-id="@export.Id">
+                                <td class="text-body">@export.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td><a asp-action="Details" asp-route-id="@export.Id" class="text-primary text-decoration-none fw-medium">@export.FileName</a></td>
+                                <td class="text-body text-end">@export.ItemCount</td>
+                                <td>
+                                    <span data-field="status" class="@export.Status.BadgeClass()">@export.Status.DisplayText()</span>
+                                    <div data-field="error" class="fs-14 text-danger text-wrap mt-1" hidden="@(export.Error is null)">@export.Error</div>
+                                </td>
+                                <td data-field="processed" class="text-body text-end">@(started ? export.ProcessedCount.ToString() : "–")</td>
+                                <td data-field="failed" class="text-body text-end">@(started ? export.FailedCount.ToString() : "–")</td>
+                                <td data-field="completed" class="text-body">@export.CompletedAt?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="text-body"><code>@export.ObjectKey</code></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
 
 @section Scripts {
     <script src="~/lib/microsoft-signalr/dist/browser/signalr.min.js"></script>

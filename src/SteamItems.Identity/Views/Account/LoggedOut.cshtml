@@ -3,12 +3,20 @@
     ViewData["Title"] = "Logged out";
 }
 
-<h1 class="h3">You are now logged out</h1>
+<div class="text-center">
+    <div class="d-flex justify-content-center align-items-center bg-primary bg-opacity-10 rounded-circle mx-auto mb-20" style="width: 160px; height: 160px;">
+        <span class="material-symbols-outlined text-primary" style="font-size: 72px;">logout</span>
+    </div>
+    <h3 class="fs-26 fw-medium mb-10">You are now logged out</h3>
 
-@if (Model.PostLogoutRedirectUri is not null)
-{
-    <p>Click <a id="post-logout-redirect" href="@Model.PostLogoutRedirectUri">here</a> to return to <strong>@Model.ClientName</strong>.</p>
-}
+    @if (Model.PostLogoutRedirectUri is not null)
+    {
+        <p class="fs-16 lh-1-8 mb-4">Returning to <span class="text-secondary">@Model.ClientName</span>&hellip;</p>
+        <a id="post-logout-redirect" href="@Model.PostLogoutRedirectUri" class="btn btn-primary fw-normal text-white w-100" style="padding-top: 18px; padding-bottom: 18px;">
+            Back to @Model.ClientName
+        </a>
+    }
+</div>
 
 @if (Model.SignOutIframeUrl is not null)
 {

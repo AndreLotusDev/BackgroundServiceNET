@@ -17,6 +17,7 @@ src/
   SteamItems.Contracts/        Shared contract between Web and Worker (Excel layout, event DTO)
   SteamItems.Identity/         Duende IdentityServer + ASP.NET Identity (login, register, tokens)
   SteamItems.Web/              ASP.NET Core MVC (OIDC client of SteamItems.Identity)
+  SteamItems.UI/               Razor Class Library: Fila theme assets + shared partials, used by Web and Identity
   SteamItems.Worker/           Worker Service
 tests/
   SteamItems.Web.Tests/        xUnit tests for the Web app (Excel export)

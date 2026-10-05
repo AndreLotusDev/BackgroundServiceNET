@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SteamItems.Contracts\SteamItems.Contracts.csproj" />
     <ProjectReference Include="..\SteamItems.ServiceDefaults\SteamItems.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\SteamItems.UI\SteamItems.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,11 @@
+@* Fila preloader with the app name instead of "FILA"; hidden by app.js on window load. *@
+<div class="preloader" id="preloader">
+    <div class="preloader">
+        <div class="waviy position-relative">
+            @foreach (var letter in "SteamItems")
+            {
+                <span class="d-inline-block">@letter</span>
+            }
+        </div>
+    </div>
+</div>

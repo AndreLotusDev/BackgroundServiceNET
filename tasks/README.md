@@ -4,6 +4,8 @@ Source: [docs/session-01-sample-project.md](../docs/session-01-sample-project.md
 
 Rule: a task does not start until its **Questions to resolve first** are answered. Write the answer under the question (`→ Answer: ...`).
 
+Rule: from task 13 on, any frontend work (Web or Identity pages) uses the Fila components and styling from `fila_samples/` in the dark theme. See [13 – Fila UI, dark theme](13-fila-dark-theme.md) for the asset list and which Fila page to copy each component from.
+
 | # | Task | Depends on |
 |---|---|---|
 | 01 | [Solution skeleton](01-solution-skeleton.md) | – |
@@ -18,3 +20,4 @@ Rule: a task does not start until its **Questions to resolve first** are answere
 | 10 | [Worker: errors and shutdown](10-worker-errors-shutdown.md) | 09 |
 | 11 | [Job status back to the user](11-job-status.md) | 09 |
 | 12 | [Show the processed rows](12-processed-items.md) | 11 |
+| 13 | [Fila UI, dark theme](13-fila-dark-theme.md) | 12 |

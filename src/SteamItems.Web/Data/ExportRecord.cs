@@ -1,3 +1,5 @@
+using SteamItems.Contracts.Status;
+
 namespace SteamItems.Web.Data;
 
 /// <summary>An Excel export uploaded to storage. <see cref="Id"/> is the export id written in the workbook.</summary>
@@ -57,14 +59,28 @@ public static class ExportStatusExtensions
         _ => status.ToString(),
     };
 
-    /// <summary>Bootstrap badge colour for the status.</summary>
-    public static string BadgeClass(this ExportStatus status) => status switch
+    /// <summary>Fila badge classes for the status (also sent to /Exports over SignalR).</summary>
+    public static string BadgeClass(this ExportStatus status) => StatusBadge.For(status switch
     {
-        ExportStatus.Pending => "text-bg-secondary",
-        ExportStatus.Processing => "text-bg-info",
-        ExportStatus.Completed => "text-bg-success",
-        ExportStatus.CompletedWithErrors => "text-bg-warning",
-        ExportStatus.Failed => "text-bg-danger",
-        _ => "text-bg-light",
-    };
+        ExportStatus.Pending => "secondary",
+        ExportStatus.Processing => "primary",
+        ExportStatus.Completed => "success",
+        ExportStatus.CompletedWithErrors => "warning",
+        ExportStatus.Failed => "danger",
+        _ => "secondary",
+    });
+}
+
+public static class FileItemStatusExtensions
+{
+    /// <summary>Fila badge classes for a row status, same colours as the matching <see cref="ExportStatus"/>.</summary>
+    public static string BadgeClass(this FileItemStatus status) =>
+        StatusBadge.For(status == FileItemStatus.Failed ? "danger" : "success");
+}
+
+/// <summary>Fila's soft badge (fila_samples/fila/orders.html): coloured text on a 10% background of the same colour.</summary>
+public static class StatusBadge
+{
+    public static string For(string color) =>
+        $"default-badge d-inline-block fs-14 fw-normal text-{color} bg-{color} bg-opacity-10";
 }

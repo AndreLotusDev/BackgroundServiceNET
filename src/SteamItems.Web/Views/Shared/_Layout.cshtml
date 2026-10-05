@@ -1,78 +1,176 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+@{
+    // Fila layout (fila_samples/fila/starter.html), dark only.
+    var controller = ViewContext.RouteData.Values["controller"] as string;
+    var action = ViewContext.RouteData.Values["action"] as string;
+    string Active(string c, string? a = null) =>
+        string.Equals(controller, c, StringComparison.OrdinalIgnoreCase)
+        && (a is null || string.Equals(action, a, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+}
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SteamItems.Web</title>
+    <title>@ViewData["Title"] - SteamItems</title>
     <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SteamItems.Web.styles.css" asp-append-version="true" />
+    <partial name="_FilaHead" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SteamItems.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Items" asp-action="Index">Items</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Exports" asp-action="Index">Exports</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Profile">Profile</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <span class="navbar-text me-2">Hello, @User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-link nav-link text-dark">Log out</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Log in</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+<body class="bg-body-bg" data-theme="dark">
+    <partial name="_FilaPreloader" />
+
+    <div class="sidebar-area" id="sidebar-area">
+        <div class="logo position-relative d-flex align-items-center justify-content-between">
+            <a asp-controller="Home" asp-action="Index" class="d-block text-decoration-none position-relative">
+                <img src="~/_content/SteamItems.UI/fila/images/logo-icon.png" alt="SteamItems" />
+                <span class="logo-text text-secondary fw-semibold">SteamItems</span>
+            </a>
+            <button type="button" class="sidebar-burger-menu-close bg-transparent py-3 border-0 opacity-0 z-n1 position-absolute top-50 end-0 translate-middle-y" id="sidebar-burger-menu-close" aria-label="Close menu">
+                <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px; transform: rotate(45deg);"></span>
+                <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px; transform: rotate(-45deg);"></span>
+            </button>
+            <button type="button" class="sidebar-burger-menu bg-transparent p-0 border-0" id="sidebar-burger-menu" aria-label="Toggle menu">
+                <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px;"></span>
+                <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px; margin: 6px 0;"></span>
+                <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px;"></span>
+            </button>
+        </div>
+
+        <aside id="layout-menu" class="layout-menu menu-vertical menu active" data-simplebar>
+            <ul class="menu-inner">
+                <li class="menu-title small text-uppercase">
+                    <span class="menu-title-text">Main</span>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="Home" asp-action="Index" class="menu-link @Active("Home", "Index")">
+                        <span class="material-symbols-outlined menu-icon">home</span>
+                        <span class="title">Home</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="Items" asp-action="Index" class="menu-link @Active("Items")">
+                        <span class="material-symbols-outlined menu-icon">sports_esports</span>
+                        <span class="title">Items</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="Exports" asp-action="Index" class="menu-link @Active("Exports")">
+                        <span class="material-symbols-outlined menu-icon">upload_file</span>
+                        <span class="title">Exports</span>
+                    </a>
+                </li>
+
+                <li class="menu-title small text-uppercase">
+                    <span class="menu-title-text">Account</span>
+                </li>
+                <li class="menu-item">
+                    <a asp-controller="Home" asp-action="Profile" class="menu-link @Active("Home", "Profile")">
+                        <span class="material-symbols-outlined menu-icon">account_circle</span>
+                        <span class="title">Profile</span>
+                    </a>
+                </li>
+
+                <li class="menu-title small text-uppercase">
+                    <span class="menu-title-text">API</span>
+                </li>
+                <li class="menu-item">
+                    <a href="~/swagger" class="menu-link" target="_blank" rel="noopener">
+                        <span class="material-symbols-outlined menu-icon">api</span>
+                        <span class="title">Swagger</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SteamItems.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <div class="container-fluid">
+        <div class="main-content d-flex flex-column">
+            <header class="header-area bg-white mb-4 rounded-10 border border-white" id="header-area">
+                <div class="row align-items-center">
+                    <div class="col-6">
+                        <div class="left-header-content">
+                            <ul class="d-flex align-items-center ps-0 mb-0 list-unstyled">
+                                <li class="d-xl-none">
+                                    <button type="button" class="header-burger-menu bg-transparent p-0 border-0 position-relative top-3" id="header-burger-menu" aria-label="Toggle menu">
+                                        <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px;"></span>
+                                        <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px; margin: 6px 0;"></span>
+                                        <span class="border-1 d-block for-dark-burger" style="border-bottom: 1px solid #475569; height: 1px; width: 25px;"></span>
+                                    </button>
+                                </li>
+                                <li class="ms-3 ms-xl-0">
+                                    <span class="fs-18 fw-medium text-secondary">@ViewData["Title"]</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-6">
+                        <div class="right-header-content">
+                            <ul class="d-flex align-items-center justify-content-end ps-0 mb-0 list-unstyled">
+                                @if (User.Identity?.IsAuthenticated == true)
+                                {
+                                    <li class="header-right-item">
+                                        <div class="dropdown admin-profile">
+                                            <div class="d-flex align-items-center bg-transparent border-0 text-start p-0 cursor dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-label="Account menu">
+                                                <span class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary" style="width: 40px; height: 40px;">
+                                                    <span class="material-symbols-outlined">person</span>
+                                                </span>
+                                                <span class="d-none d-md-inline fs-15 fw-medium text-secondary ms-2">@User.Identity.Name</span>
+                                            </div>
+
+                                            <div class="dropdown-menu border-0 bg-white dropdown-menu-end">
+                                                <div class="d-flex align-items-center info">
+                                                    <div class="flex-grow-1">
+                                                        <h3 class="fw-medium fs-17 mb-0">@User.Identity.Name</h3>
+                                                        <span class="fs-15 fw-medium">Signed in</span>
+                                                    </div>
+                                                </div>
+                                                <ul class="admin-link mb-0 list-unstyled">
+                                                    <li>
+                                                        <a class="dropdown-item admin-item-link d-flex align-items-center text-body" asp-controller="Home" asp-action="Profile">
+                                                            <i class="material-symbols-outlined">person</i>
+                                                            <span class="ms-2">My Profile</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                                            <button type="submit" class="dropdown-item admin-item-link d-flex align-items-center text-body">
+                                                                <i class="material-symbols-outlined">logout</i>
+                                                                <span class="ms-2">Log out</span>
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li class="header-right-item">
+                                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary text-white fw-normal">
+                                            <i class="ri-login-box-line me-1"></i> Log in
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main role="main" class="main-content-container overflow-hidden">
+                @RenderBody()
+            </main>
+
+            <div class="flex-grow-1"></div>
+
+            <footer class="footer-area bg-white text-center rounded-10 rounded-bottom-0">
+                <p class="fs-16 text-body">&copy; 2026 <span class="text-secondary">SteamItems</span> &middot; <a asp-controller="Home" asp-action="Privacy" class="text-decoration-none text-primary">Privacy</a></p>
+            </footer>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    </div>
+
+    <partial name="_FilaScripts" />
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

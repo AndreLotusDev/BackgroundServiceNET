@@ -22,7 +22,7 @@
         const field = name => row.querySelector(`[data-field="${name}"]`);
         const badge = field("status");
         badge.textContent = update.statusText;
-        badge.className = `badge ${update.badgeClass}`;
+        badge.className = update.badgeClass;
 
         const error = field("error");
         error.textContent = update.error ?? "";

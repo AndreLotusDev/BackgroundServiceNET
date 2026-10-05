@@ -2,28 +2,51 @@
 @{
     ViewData["Title"] = "Profile";
     var auth = await Context.AuthenticateAsync();
+    var sections = new (string Title, IEnumerable<KeyValuePair<string, string?>> Values)[]
+    {
+        ("Claims", User.Claims.Select(c => new KeyValuePair<string, string?>(c.Type, c.Value))),
+        ("Session properties", auth.Properties?.Items ?? Enumerable.Empty<KeyValuePair<string, string?>>()),
+    };
 }
 
-<h1>Hello, @User.Identity?.Name</h1>
-<p>This page requires login. Claims and session data issued by SteamItems.Identity:</p>
+<div class="card bg-white rounded-10 border border-white p-20 mb-4">
+    <div class="d-flex align-items-center">
+        <span class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary" style="width: 60px; height: 60px;">
+            <span class="material-symbols-outlined fs-28">person</span>
+        </span>
+        <div class="flex-grow-1 ms-3">
+            <h3 class="fs-20 fw-medium mb-1">Hello, @User.Identity?.Name</h3>
+            <p class="fs-15 mb-0">This page requires login. Claims and session data issued by SteamItems.Identity:</p>
+        </div>
+    </div>
+</div>
 
-<h2 class="h5 mt-4">Claims</h2>
-<dl class="row">
-    @foreach (var claim in User.Claims)
-    {
-        <dt class="col-sm-3">@claim.Type</dt>
-        <dd class="col-sm-9 text-break">@claim.Value</dd>
-    }
-</dl>
-
-<h2 class="h5 mt-4">Session properties</h2>
-<dl class="row">
-    @if (auth.Properties is not null)
-    {
-        foreach (var item in auth.Properties.Items)
-        {
-            <dt class="col-sm-3">@item.Key</dt>
-            <dd class="col-sm-9 text-break">@item.Value</dd>
-        }
-    }
-</dl>
+@foreach (var group in sections)
+{
+    <div class="card bg-white rounded-10 border border-white mb-4">
+        <div class="p-20 pb-0">
+            <h3 class="fs-18 fw-medium mb-0">@group.Title</h3>
+        </div>
+        <div class="default-table-area mx-minus-1">
+            <div class="table-responsive">
+                <table class="table align-middle w-100">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="fw-medium">Name</th>
+                            <th scope="col" class="fw-medium">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (key, value) in group.Values)
+                        {
+                            <tr>
+                                <td class="text-secondary">@key</td>
+                                <td class="text-body text-break">@value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

@@ -3,18 +3,22 @@
     ViewData["Title"] = "Error";
 }
 
-<h1 class="h3 text-danger">Error</h1>
-<p>Sorry, there was an error.</p>
+<div class="text-center">
+    <div class="mb-20">
+        <span class="material-symbols-outlined text-danger" style="font-size: 80px;">error</span>
+    </div>
+    <h3 class="fs-26 fw-medium mb-10">Sorry, there was an error.</h3>
 
-@if (Model is not null)
-{
-    <p><strong>@Model.Error</strong></p>
-    @if (Model.ErrorDescription is not null)
+    @if (Model is not null)
     {
-        <p>@Model.ErrorDescription</p>
+        <p class="fs-16 mb-10"><span class="text-secondary fw-medium">@Model.Error</span></p>
+        @if (Model.ErrorDescription is not null)
+        {
+            <p class="fs-16 lh-1-8 mb-10">@Model.ErrorDescription</p>
+        }
+        @if (Model.RequestId is not null)
+        {
+            <p class="fs-14 mb-0">Request id: @Model.RequestId</p>
+        }
     }
-    @if (Model.RequestId is not null)
-    {
-        <p class="text-muted small">Request id: @Model.RequestId</p>
-    }
-}
+</div>

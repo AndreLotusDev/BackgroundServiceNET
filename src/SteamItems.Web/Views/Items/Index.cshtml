@@ -5,56 +5,76 @@
     var usd = CultureInfo.GetCultureInfo("en-US");
 }
 
-<h1>Steam items</h1>
-<p>Select the items to export.</p>
-
 @if (TempData["StatusMessage"] is string status)
 {
-    <div class="alert alert-success" role="status">@status</div>
+    <div class="alert fs-16 alert-success text-success" role="status">@status</div>
 }
 @if (TempData["ErrorMessage"] is string error)
 {
-    <div class="alert alert-warning" role="alert">@error</div>
+    <div class="alert fs-16 alert-warning text-warning" role="alert">@error</div>
 }
 
 <form asp-action="Index" method="post">
     @if (!ViewData.ModelState.IsValid)
     {
-        <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+        <div asp-validation-summary="All" class="alert fs-16 alert-danger text-danger" role="alert"></div>
     }
 
-    <table class="table table-sm table-hover align-middle">
-        <thead>
-            <tr>
-                <th scope="col"><span class="visually-hidden">Select</span></th>
-                <th scope="col">App id</th>
-                <th scope="col">Name</th>
-                <th scope="col" class="text-end">Price</th>
-                <th scope="col">Release date</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
-                var id = $"item-{item.AppId}";
-                <tr>
-                    <td>
-                        <input class="form-check-input" type="checkbox" id="@id"
-                               name="@nameof(Model.SelectedAppIds)" value="@item.AppId"
-                               checked="@Model.SelectedAppIds.Contains(item.AppId)" />
-                    </td>
-                    <td>@item.AppId</td>
-                    <td><label for="@id">@item.Name</label></td>
-                    <td class="text-end">@(item.Price == 0 ? "Free" : item.Price.ToString("C", usd))</td>
-                    <td>@item.ReleaseDate.ToString("yyyy-MM-dd")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="card bg-white rounded-10 border border-white mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-20">
+            <div>
+                <h3 class="fs-18 fw-medium mb-1">Steam items</h3>
+                <p class="fs-15 mb-0">Select the items to export.</p>
+            </div>
+        </div>
 
-    <button type="submit" class="btn btn-primary">Save selection</button>
-    <a asp-action="Export" class="btn btn-outline-secondary">Download Excel</a>
-    <button type="submit" form="upload-form" class="btn btn-outline-primary">Upload Excel</button>
+        <div class="default-table-area mx-minus-1">
+            <div class="table-responsive">
+                <table class="table align-middle w-100 text-nowrap">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="fw-medium"><span class="visually-hidden">Select</span></th>
+                            <th scope="col" class="fw-medium">App id</th>
+                            <th scope="col" class="fw-medium">Name</th>
+                            <th scope="col" class="fw-medium text-end">Price</th>
+                            <th scope="col" class="fw-medium">Release date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            var id = $"item-{item.AppId}";
+                            <tr>
+                                <td style="width: 62px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="@id"
+                                               name="@nameof(Model.SelectedAppIds)" value="@item.AppId"
+                                               checked="@Model.SelectedAppIds.Contains(item.AppId)" />
+                                    </div>
+                                </td>
+                                <td class="text-body">@item.AppId</td>
+                                <td><label for="@id" class="fs-16 fw-medium text-secondary">@item.Name</label></td>
+                                <td class="text-body text-end">@(item.Price == 0 ? "Free" : item.Price.ToString("C", usd))</td>
+                                <td class="text-body">@item.ReleaseDate.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 p-20">
+            <button type="submit" class="btn btn-primary text-white fw-normal">
+                <i class="ri-save-line me-1"></i> Save selection
+            </button>
+            <a asp-action="Export" class="btn btn-outline-secondary fw-normal">
+                <i class="ri-file-excel-2-line me-1"></i> Download Excel
+            </a>
+            <button type="submit" form="upload-form" class="btn btn-outline-primary fw-normal">
+                <i class="ri-upload-cloud-2-line me-1"></i> Upload Excel
+            </button>
+        </div>
+    </div>
 </form>
 
 @* Separate form: uploading uses the saved selection, not the checkboxes posted by the form above. *@

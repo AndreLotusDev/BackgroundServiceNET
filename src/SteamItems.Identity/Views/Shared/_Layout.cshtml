@@ -4,25 +4,35 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SteamItems Identity</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <partial name="_FilaHead" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-light bg-white border-bottom mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">SteamItems Identity</a>
+@* Fila auth layout (fila_samples/fila/sign-in.html): one centered card, no sidebar. Dark only. *@
+<body class="bg-body-bg" data-theme="dark">
+    <partial name="_FilaPreloader" />
+
+    <div class="container-fluid">
+        <div class="main-content d-flex flex-column p-0">
+            <div class="m-lg-auto my-auto w-930 py-4">
+                <div class="text-center mb-4">
+                    <a asp-controller="Home" asp-action="Index" class="d-inline-flex align-items-center text-decoration-none">
+                        <img src="~/_content/SteamItems.UI/fila/images/logo-icon.png" alt="SteamItems" />
+                        <span class="fs-20 fw-semibold text-secondary ms-2">SteamItems Identity</span>
+                    </a>
+                </div>
+                <main role="main" class="card bg-white border rounded-10 border-white py-100 px-130">
+                    <div class="p-md-5 p-4 p-lg-0">
+                        @RenderBody()
+                    </div>
+                </main>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <span class="navbar-text">Signed in as <strong>@User.Identity.Name</strong></span>
+                    <p class="fs-15 text-center mt-3 mb-0">Signed in as <span class="text-secondary fw-medium">@User.Identity.Name</span></p>
                 }
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </div>
     </div>
+
+    <partial name="_FilaScripts" />
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
