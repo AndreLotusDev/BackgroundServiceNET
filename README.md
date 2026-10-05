@@ -108,6 +108,12 @@ After an upload, **Exports** shows the Worker's outcome: `Pending` → `Processi
 
 Web polls the Worker's status endpoint, `GET http://localhost:5290/api/files/status?key=…`, every 5 seconds for unfinished exports and stores the result in `web.db`. Web never reads `worker.db`. While the Worker is down, exports stay `Pending` and update once it is back. Settings: `WorkerStatus` section in Web's [appsettings.Development.json](src/SteamItems.Web/appsettings.Development.json).
 
+## Resilience
+
+- **Retries:** SQS, S3 and SQLite calls use Polly retry with backoff and a circuit breaker.
+- **No lost messages:** a message is deleted only after the file is processed. If the Worker dies, SQS redelivers it after the visibility timeout (extended by a heartbeat while processing); poison messages end up in the DLQ.
+- **Graceful shutdown:** on SIGTERM the listener stops polling, the processors finish their current row, and the host waits up to `HostOptions:ShutdownTimeout` (60 s). In Kubernetes, set `terminationGracePeriodSeconds` higher than that (e.g. 90).
+
 ## Build and test
 
 ```bash
