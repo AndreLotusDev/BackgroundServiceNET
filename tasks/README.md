@@ -21,3 +21,4 @@ Rule: from task 13 on, any frontend work (Web or Identity pages) uses the Fila c
 | 11 | [Job status back to the user](11-job-status.md) | 09 |
 | 12 | [Show the processed rows](12-processed-items.md) | 11 |
 | 13 | [Fila UI, dark theme](13-fila-dark-theme.md) | 12 |
+| 14 | [Databases outside the projects + DB browser](14-worker-db-outside.md) | 12 |

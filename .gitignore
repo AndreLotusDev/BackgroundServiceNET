@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Local data mounted by the AppHost (worker.db, task 14)
+/data/
+
 # User-specific files
 *.rsuser
 *.suo

@@ -51,7 +51,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<WorkerDbContext>().Database.MigrateAsync();
+    var db = scope.ServiceProvider.GetRequiredService<WorkerDbContext>().Database;
+    await db.MigrateAsync();
+
+    // EF creates the file in WAL mode. The sqlite-web container (task 14) opens it across the
+    // host/VM boundary, where SQLite locks and the -shm memory map are not shared; in WAL mode even
+    // a read-only reader writes to -shm. Rollback-journal mode keeps that reader off our files.
+    // Persisted in the file, so this only changes something the first time.
+    await db.ExecuteSqlRawAsync("PRAGMA journal_mode=DELETE;");
 }
 
 app.MapFileStatus();

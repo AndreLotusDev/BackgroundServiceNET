@@ -111,7 +111,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    await scope.ServiceProvider.GetRequiredService<WebDbContext>().Database.MigrateAsync();
+    var db = scope.ServiceProvider.GetRequiredService<WebDbContext>().Database;
+    await db.MigrateAsync();
+
+    // Rollback-journal mode, not EF's default WAL: the sqlite-web container opens web.db across the
+    // host/VM boundary, where SQLite locks and the -shm memory map are not shared (task 14).
+    await db.ExecuteSqlRawAsync("PRAGMA journal_mode=DELETE;");
 }
 else
 {
