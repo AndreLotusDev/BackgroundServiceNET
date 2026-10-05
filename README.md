@@ -66,6 +66,18 @@ This starts Identity, Web and Worker and opens the Aspire dashboard (its URL, in
 
 Under the AppHost the databases are `data/worker/worker.db` and `data/web/web.db` (repo root, gitignored), not the project folders, and they survive restarts. Browse them read-only with **sqlite-web** on http://localhost:8081: switch between `worker.db` and `web.db` from its header; refresh to see new rows. Delete `data/` to start from empty databases. See [task 14](tasks/14-worker-db-outside.md).
 
+## Run from published executables
+
+No SDK needed to run. Needs Docker (LocalStack) and, in `publish/`:
+
+```powershell
+.\publish\build.ps1   # single-file exes for Identity, Worker and Web -> publish/out/ (-Runtime linux-x64 for Linux)
+.\publish\up.ps1      # LocalStack + s3manager (docker compose), then the three exes; builds first if needed
+.\publish\down.ps1    # stops everything
+```
+
+Web is on https://localhost:7281 (login `alice` / `Pass123$`); logs go to `publish/logs/`. The exes run in the `Development` environment, and their databases are created next to each exe in `publish/out/<service>/`.
+
 ## Run a single service
 
 Identity (https://localhost:5001, discovery at `/.well-known/openid-configuration`). In Development it applies migrations to `identity.db` and seeds the test users on startup:

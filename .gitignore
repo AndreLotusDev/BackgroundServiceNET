@@ -488,3 +488,8 @@ $RECYCLE.BIN/
 *.db
 *.db-shm
 *.db-wal
+
+# Keep the publish scripts; ignore their output
+!publish/
+publish/*
+!publish/*.ps1
